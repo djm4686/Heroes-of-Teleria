@@ -12,7 +12,7 @@ class HeroCreationScreen():
         self.initVariables()
         self.mainLoop()
     def initVariables(self):
-        self.party = party.Party()
+        self.party = party.Party(1)
         self.party.addHero(self.makeHero())
         self.bgimage = pygame.transform.scale2x(pygame.image.load("images/panel_blue.png"))
         self.font = pygame.font.Font(pygame.font.get_default_font(), 12)
