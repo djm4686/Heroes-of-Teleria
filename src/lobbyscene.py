@@ -112,7 +112,7 @@ class LobbyScene:
         print received
         received = ast.literal_eval(received)
         if received["header"]["reqtype"] == "success":
-            p = party.Party(self.player)
+            p = party.Party(player.Player())
             for h in received["data"]["heroes"]:
                 
                 p.addHero(hero.createFromJSON(ast.literal_eval(h)))

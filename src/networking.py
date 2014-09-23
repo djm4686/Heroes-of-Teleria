@@ -1,5 +1,7 @@
-import SocketServer, ast, chatmessage, mysql.connector, time, lobby, hero
+import SocketServer, ast, chatmessage, time, lobby, hero
 from globalvars import *
+if __name__ == "__main__":
+    import mysql.connector
 class Header:
     def __init__(self, clientID, reqtype):
         self.clientID = clientID
@@ -94,9 +96,26 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                 if self.sendTileChoice(d["data"]):
                     self.request.sendall(DataFrame(Header(0, "success")).toString())
                 else:
-                    self.request.sendall(DataFrame(Header(0, "failed")).toString())    
+                    self.request.sendall(DataFrame(Header(0, "failed")).toString())
+            if conHeader.reqtype == "getHeroesInGame":
+                pass
         except ValueError:
             pass
+    def getHeroesInGame(self, data):
+        gameID = data["gameID"]
+        payload = "select heroID from heroesingames where GameID = "+str(gameID)+";"
+        cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
+        c = cnx.cursor()
+        c.execute(payload)
+        heroes = []
+        for heroID in c:
+            payload = "select * from heroes where heroID = "+heroID[0]+";"
+            cnx2 = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
+            c2 = cnx.cursor()
+            c2.execute(payload)
+            h = self.makeHeroes(c2)
+            for he in h:
+                heroes.append(h.getJSON())
     def sendTileChoice(self, data):
         playerID = data["id"]
         row = data["row"]
