@@ -124,6 +124,16 @@ class HexBoard:
                 y.x = y.x + coordDifference[0]
                 y.y = y.y + coordDifference[1]
                 y.reMakePoints()
+    def getNeighborTiles(self, tile, r):
+        if r == 1:
+            return [tile]
+        tiles = [tile]
+        neighbors = tile.getNeighbors()
+        for t in neighbors:
+            if t != None:
+                tiles += self.getNeighborTiles(t, r-1)
+        tiles = list(set(tiles))
+        return tiles
     def setStartCoords(self, coord):
         xcoord = coord[0]
         ycoord = coord[1]

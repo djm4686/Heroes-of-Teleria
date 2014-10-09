@@ -1,5 +1,5 @@
 import pygame, party, sys, button, activeHeroEvent, targetevent, battlepartymanager, zoneevent, random, imageevent, herostatusevent, phase, herobattlestats, moveevent
-import hexboard
+import isoboard
 from pygame.locals import *
 class BattleScene:
     def __init__(self, surface, party1 = party.AI, party2 = party.AI2, ai = True):
@@ -23,7 +23,7 @@ class BattleScene:
         self.moved = False
         self.attacked = False
         self.originp = (0,0)
-        self.hexBoard = hexboard.HexBoard(16,8)
+        self.hexBoard = isoboard.IsoBoard(10,10, 64)
         self.makeChoiceButtons()
         self.cancelButton = button.Button(self.makeText("Cancel"), self.startPhase)
         self.cancelButton.setRect(pygame.Rect(200, 550, 100, 50))
@@ -123,6 +123,11 @@ class BattleScene:
             if event.type == MOUSEBUTTONDOWN and event.button == 3:
                 self.moving = True
                 self.originp = event.pos
+            if event.type == MOUSEBUTTONDOWN and event.button == 2:
+                activeTile = self.hexBoard.collidepoint(event.pos)
+                if activeTile != None:
+                    t = self.hexBoard.getNeighborTiles(activeTile, 3)
+                    self.addEvent(zoneevent.ZoneEvent(5, t))
             if event.type == MOUSEBUTTONUP and event.button == 3:
                 self.moving = False
             if event.type == MOUSEBUTTONUP and event.button == 1 and self.backButton.getRect().collidepoint(event.pos):
@@ -161,10 +166,11 @@ class BattleScene:
                         
                         if activeTile != None and activeTile.getZone() == self.partyManager.checkHero(self.order[self.phaseCount]):
                             self.addEvent(activeHeroEvent.activeHeroEvent(0, activeTile))
-                            self.addEvent(imageevent.ImageEvent(2, self.order[self.phaseCount].getActiveHeroClass().getSprite(), activeTile))
+                            self.addEvent(imageevent.ImageEvent(200, self.order[self.phaseCount].getActiveHeroClass().getSprite(), activeTile))
                     if event.type == MOUSEBUTTONDOWN and event.button == 1:
                         activeTile = self.hexBoard.collidepoint(event.pos)
                         if activeTile != None and activeTile.getGameObject() == None and activeTile.getZone() == self.partyManager.checkHero(self.order[self.phaseCount]):
+                            self.events = []
                             activeTile.setGameObject(self.order[self.phaseCount])
                             self.phase.addSubPhase(phase.Phase("Direction"))
                             if self.phaseCount >= len(self.order):
@@ -261,10 +267,11 @@ class BattleScene:
     def draw(self, surface):
         surface.fill((128, 128, 128))
         self.backButton.setRect(pygame.Rect(700,0,100,50))
-        
         for x in self.events:
-            x.draw(surface)
+            if x.getID() < 100:
+                x.draw(surface)
         self.hexBoard.draw(surface)
+        
         if self.phase.getName() == "Main":
             if self.phase.getSubPhase().getName() != "TurnStart":
                 self.cancelButton.draw(surface)
@@ -279,6 +286,9 @@ class BattleScene:
             self.endTurnButton.draw(surface)   
         self.drawActiveHero(surface)
         self.backButton.draw(surface)
+        for x in self.events:
+            if x.getID() > 100:
+                x.draw(surface)
         
 if __name__ == "__main__":
     pygame.init()

@@ -202,6 +202,7 @@ class Hero:
             
             r = pygame.Rect(self.tile.getCenter(), (sprites[0+self.i].get_rect().width, sprites[0+self.i].get_rect().height))
             r.center = self.tile.getCenter()
+            r.y = r.y - 20
             surface.blit(sprites[0+self.i], r)
             if currtime - self.lastTime > .5:
                 self.i += 1
@@ -211,12 +212,12 @@ class Hero:
             r = pygame.Rect(self.tile.getCenter(), (self.nameLabel.get_rect().width, self.nameLabel.get_rect().height))
             r.center = self.tile.getCenter()
             r.y = r.y - 30
-            surface.blit(self.nameLabel, r)
+            #surface.blit(self.nameLabel, r)
             hpLabel = self.font.render("HP: " + str(self.getCurrentHP()), True, (0,0,0), (255,0,0))
             r = pygame.Rect(self.tile.getCenter(), (hpLabel.get_rect().width, hpLabel.get_rect().height))
             r.center = self.tile.getCenter()
             r.y = r.y - 20
-            surface.blit(hpLabel, r)
+            #surface.blit(hpLabel, r)
         else:
             i = pygame.image.load("images/tombstone.png")
             r = pygame.Rect(self.tile.getCenter(), (i.get_rect().width, i.get_rect().height))

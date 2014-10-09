@@ -7,4 +7,5 @@ class ImageEvent(battlevent.BattleEvent):
     def draw(self, surface):
         r = self.image.get_rect()
         r.center = self.tile.getCenter()
+        r.y = r.y - 10
         surface.blit(self.image, r)
