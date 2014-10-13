@@ -12,12 +12,14 @@ class IsometricTile:
         self.n2 = None
         self.n3 = None
         self.n4 = None
+        self.sprite = pygame.image.load("images/Grass_png.png")
         self.zone = zone
         self.points = [(self.x, self.y),
                        (self.x + int(self.width * .5), self.y + int(self.width * .5 * .5)),
                        (self.x, self.y + int(self.width * .5)),
                        (self.x - int(self.width * .5), self.y + int(self.width * .5 * .5)),
                        (self.x, self.y)]
+        
     def getID(self):
         return self.id
     def reMakePoints(self):
@@ -33,10 +35,9 @@ class IsometricTile:
     def getCenter(self):
         return int(self.x), int(self.y + (self.width *.5 * .5))
     def setGameObject(self, g):
-        if g.getTile() != None:
-            g.getTile().gameObject = None
         self.gameObject = g
-        self.gameObject.setTile(self)
+        if g.tile == None:
+            g.setTile(self)
     def getGameObject(self):
         return self.gameObject
     def getNeighbors(self):
@@ -67,8 +68,12 @@ class IsometricTile:
             return True
         else:
             return False
-    def draw(self, surface):
-        pygame.draw.lines(surface, BLACK, True, self.points, 2)
+    def drawHero(self, surface):
         if self.gameObject != None:
             self.gameObject.draw(surface)
+    def drawTile(self, surface):
+        
+        surface.blit(self.sprite, pygame.Rect(self.x-(.5 * self.size), self.y, self.size, self.size * .5))
+        pygame.draw.lines(surface, BLACK, True, self.points, 2)
+        
 

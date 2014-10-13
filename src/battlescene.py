@@ -1,4 +1,4 @@
-import pygame, party, sys, button, activeHeroEvent, targetevent, battlepartymanager, zoneevent, random, imageevent, herostatusevent, phase, herobattlestats, moveevent
+import pygame, party, sys, button, activeHeroEvent, targetevent, battlepartymanager, zoneevent, random, imageevent, herostatusevent, moveanimation, phase, herobattlestats, moveevent
 import isoboard
 from pygame.locals import *
 class BattleScene:
@@ -15,6 +15,7 @@ class BattleScene:
         self.surface = surface
         self.determineInitiative()
         self.ai = ai
+        self.heroAnimation = None
         self.ismain = True
         self.backButton = button.Button(self.makeText("Back"))
         self.events = []
@@ -113,10 +114,14 @@ class BattleScene:
             tiles = [] + temptiles    
             i = i + 1
         return tiles
+    def animationPhase(self):
+        self.phase.addSubPhase(phase.Phase("Animation"))
     def eventLoop(self):
         for event in pygame.event.get():
             if event.type == QUIT:
                     pygame.quit()
+            if self.phase.getSubPhase().getName() == "Animation":
+                return
             if event.type == MOUSEMOTION and self.moving == True:
                 self.hexBoard.setNewCoords((event.pos[0] - self.originp[0], event.pos[1] - self.originp[1]))
                 self.originp = event.pos
@@ -159,7 +164,7 @@ class BattleScene:
                                 self.phase = phase.Phase("Main")
                                 self.phase.addSubPhase(phase.Phase("TurnStart"))
                     if self.partyManager.checkHero(self.order[self.phaseCount]) == 1:
-                        self.addEvent(zoneevent.ZoneEvent(1,self.hexBoard.getZone1()))
+                        self.addEvent(zoneevent.ZoneEvent(101,self.hexBoard.getZone1()))
                     activeTile = None
                     if event.type == MOUSEMOTION:
                         activeTile = self.hexBoard.collidepoint(event.pos)
@@ -197,11 +202,13 @@ class BattleScene:
                     else:
                         self.nextHero()
                 elif self.phase.getSubPhase().getName() == "Move":
-                    self.addEvent(moveevent.MoveEvent(2, self.order[self.phaseCount].getTile(), self.order[self.phaseCount].getMovementRange()))
+                    self.addEvent(moveevent.MoveEvent(200, self.order[self.phaseCount].getTile(), self.order[self.phaseCount].getMovementRange()))
                     for x in self.getTilesWithRange(self.order[self.phaseCount].getMovementRange(), self.order[self.phaseCount].getTile()):
                         if event.type == MOUSEBUTTONUP and event.button == 1 and x.collidepoint(event.pos) and not self.cancelButton.collidepoint(event.pos) and not self.backButton.collidepoint(event.pos):
-                            x.setGameObject(self.order[self.phaseCount])
-                            self.startPhase()
+                            self.heroAnimation = moveanimation.MoveAnimation(self.order[self.phaseCount].getTile(), x, self.order[self.phaseCount])
+                            self.animationPhase()
+                            self.events = []
+                            #self.startPhase()
                             self.moved = True
                 elif self.phase.getSubPhase().getName() == "Attack":
                     for x in self.choiceButtons:
@@ -267,11 +274,16 @@ class BattleScene:
     def draw(self, surface):
         surface.fill((128, 128, 128))
         self.backButton.setRect(pygame.Rect(700,0,100,50))
+        
+        self.hexBoard.drawTiles(surface)
+        self.drawActiveHero(surface)
+        self.backButton.draw(surface)
         for x in self.events:
             if x.getID() < 100:
                 x.draw(surface)
-        self.hexBoard.draw(surface)
-        
+        for x in self.events:
+            if x.getID() > 100:
+                x.draw(surface)
         if self.phase.getName() == "Main":
             if self.phase.getSubPhase().getName() != "TurnStart":
                 self.cancelButton.draw(surface)
@@ -283,12 +295,25 @@ class BattleScene:
                 for x in range(len(self.choiceButtons)):
                     self.choiceButtons[x].setRect(pygame.Rect(200, 400 + (x * 50), 100, 50))
                     self.choiceButtons[x].draw(surface)
+            if self.phase.getSubPhase().getName() == "Animation" and self.heroAnimation != None and self.heroAnimation.working == True:
+                if self.order[self.phaseCount].getTile() != None:
+                    self.order[self.phaseCount].draw(surface)
+                node = self.heroAnimation.animate(surface)
+                if node != None:
+                    for x in range(len(self.hexBoard.tiles)):
+                        for y in range(len(self.hexBoard.tiles[x])):
+                            if self.hexBoard.tiles[x][y].getID() == node[0].getID():
+                                print "hello"
+                                print self.order[self.phaseCount]
+                                self.order[self.phaseCount].setDirection(node[1])
+                                self.hexBoard.tiles[x][y].setGameObject(self.order[self.phaseCount])
+                                print self.hexBoard.tiles[x][y].getGameObject().getName()
+                                self.hexBoard.tiles[x][y].getGameObject().draw(surface)
+                                self.heroAnimation = None
+                                self.startPhase()
             self.endTurnButton.draw(surface)   
-        self.drawActiveHero(surface)
-        self.backButton.draw(surface)
-        for x in self.events:
-            if x.getID() > 100:
-                x.draw(surface)
+
+        self.hexBoard.drawHeroes(surface)
         
 if __name__ == "__main__":
     pygame.init()

@@ -86,8 +86,12 @@ class IsoBoard:
                 else:
                     self.tiles[row].append(IsometricTile(j, xcoord + (self.size * .5 * column) - (row * self.size * .5), ycoord + (row * self.size * .5 * .5) + (.5 * column * self.size * .5), size = self.size))
                 j += 1
-    def draw(self, surface):
+    def drawHeroes(self, surface):
         for row in self.tiles:
             for tile in row:
-                tile.draw(surface)
+                tile.drawHero(surface)
+    def drawTiles(self, surface):
+        for row in self.tiles:
+            for tile in row:
+                tile.drawTile(surface)
         

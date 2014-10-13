@@ -4,6 +4,8 @@ class Hero:
     def __init__(self, ID, name, heroclass, race, playerID = 0):
         pygame.init()
         self.ID = ID
+        self.x = 0
+        self.y = 0
         self.name = name
         self.activeHeroClass = heroclass
         self.secondaryClasses = []
@@ -33,6 +35,8 @@ class Hero:
         self.armor = chainmail.ChainMail()
         self.lastTime = time.clock()
         self.i = 0
+    def getWalkingSprites(self):
+        return self.activeHeroClass.getWalkingSprites(self.direction)
     def getPlayerID(self):
         return self.playerID
     def getExp(self):
@@ -71,6 +75,8 @@ class Hero:
     def isDead(self):
         return (self.currentHp <= 0)
     def setTile(self, tile):
+        if self.tile != None:
+            self.tile.gameObject = None
         self.tile = tile
     def getTile(self):
         return self.tile
@@ -203,12 +209,22 @@ class Hero:
             r = pygame.Rect(self.tile.getCenter(), (sprites[0+self.i].get_rect().width, sprites[0+self.i].get_rect().height))
             r.center = self.tile.getCenter()
             r.y = r.y - 20
-            surface.blit(sprites[0+self.i], r)
-            if currtime - self.lastTime > .5:
-                self.i += 1
-                self.lastTime = currtime
-                if self.i > 2:
-                    self.i = 0
+            try:
+                surface.blit(sprites[0+self.i], r)
+            except IndexError:
+                pass
+            if self.activeHeroClass.getName() == "Fighter":
+                if currtime - self.lastTime > .125:
+                    self.i += 1
+                    self.lastTime = currtime
+                    if self.i > 5:
+                        self.i = 0
+            else:
+                if currtime - self.lastTime > .5:
+                    self.i += 1
+                    self.lastTime = currtime
+                    if self.i > 2:
+                        self.i = 0
             r = pygame.Rect(self.tile.getCenter(), (self.nameLabel.get_rect().width, self.nameLabel.get_rect().height))
             r.center = self.tile.getCenter()
             r.y = r.y - 30
