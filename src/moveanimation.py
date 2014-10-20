@@ -47,13 +47,13 @@ class MoveAnimation(heroanimation.HeroAnimation):
             hero.setDirection(3)
     def createPath(self):
         currTile = self.hero.getTile()
-        while currTile.getID() != self.endTile.getID():
+        while (currTile.getID() != self.endTile.getID() and (currTile.getGameObject() != None and currTile.getGameObject().getID() == self.hero.getID())) or (currTile.getID() != self.endTile.getID() and currTile.getGameObject() == None) :
             self.setDirection(currTile, self.endTile.getCenter(), self.hero)
             currTile = self.hero.getTile().getNeighbors()[self.hero.getDirection()-1]
             self.hero.setTile(currTile)
             self.path.addTile(currTile, self.hero.getDirection())
         self.hero.setTile(self.startTile)
-        self.hero.setDirection(self.path.getDirections()[0])
+        self.hero.setDirection(self.path.getDirections()[1])
         print self.path.getDirections()
     def animate(self, surface):
         self.curTime = time.clock()
@@ -76,15 +76,13 @@ class MoveAnimation(heroanimation.HeroAnimation):
                     self.working = False
                     self.hero.setTile(self.node[0])
                     return self.node
-
-            
-            sprites = self.hero.getWalkingSprites()
-            if self.hero.activeHeroClass.getName() == "Fighter":
-                self.i += 1
-                if self.i > 5:
-                    self.i = 0
+                self.lastTime = 0
             self.lastTime = self.curTime
-        if self.nextNode != None:
+            self.i += 1
+            if self.i > 5:
+                self.i = 0
+        
+        if self.nextNode != None and self.hero.getTile() == None:
             if self.x > self.nextNode[0].getCenter()[0] and self.y > self.nextNode[0].getCenter()[1]:
                 self.x -= 1
                 self.y = (.5 * self.x) + (self.nextNode[0].getCenter()[1] - (.5 * self.nextNode[0].getCenter()[0]))
@@ -97,17 +95,15 @@ class MoveAnimation(heroanimation.HeroAnimation):
             elif self.x > self.nextNode[0].getCenter()[0] and self.y < self.nextNode[0].getCenter()[1]:
                 self.x -= 1
                 self.y = (-.5 * self.x) + (self.nextNode[0].getCenter()[1] - (-.5 * self.nextNode[0].getCenter()[0]))
-            if self.nextNode != None and math.fabs(self.x - self.nextNode[0].getCenter()[0]) < 2 and math.fabs(self.y - self.nextNode[0].getCenter()[1]) < 2:
+            if self.nextNode != None and math.fabs(self.x - self.nextNode[0].getCenter()[0]) < 1 and math.fabs(self.y - self.nextNode[0].getCenter()[1]) < 1:
                 self.hero.setTile(self.nextNode[0])
             if self.nextNode == None:
                 self.hero.setTile(self.node[0])
-                
-            print self.x, self.y
-            print self.nextNode
-            sprites = self.hero.getWalkingSprites()
-            p = pygame.Rect(self.x, self.y, 60, 60)
-            p.center = (self.x, self.y - 20)
-            surface.blit(sprites[self.i],p)
+            if self.hero.getTile != None:
+                sprites = self.hero.getWalkingSprites()
+                p = pygame.Rect(self.x, self.y, 60, 60)
+                p.center = (self.x, self.y - 20)
+                surface.blit(sprites[self.i],p)
 
 
 

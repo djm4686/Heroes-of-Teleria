@@ -28,7 +28,7 @@ class Hero:
         self.currentMana = self.maxMana
         self.armor = None
         self.tile = None
-        self.range = 2
+        self.range = 4
         self.meleeWeapon = sword.Sword()
         self.rangedWeapon = shortbow.ShortBow()
         self.shield = buckler.Buckler()
@@ -213,18 +213,12 @@ class Hero:
                 surface.blit(sprites[0+self.i], r)
             except IndexError:
                 pass
-            if self.activeHeroClass.getName() == "Fighter":
-                if currtime - self.lastTime > .125:
-                    self.i += 1
-                    self.lastTime = currtime
-                    if self.i > 5:
-                        self.i = 0
-            else:
-                if currtime - self.lastTime > .5:
-                    self.i += 1
-                    self.lastTime = currtime
-                    if self.i > 2:
-                        self.i = 0
+
+            if currtime - self.lastTime > .125:
+                self.i += 1
+                self.lastTime = currtime
+                if self.i > 5:
+                    self.i = 0
             r = pygame.Rect(self.tile.getCenter(), (self.nameLabel.get_rect().width, self.nameLabel.get_rect().height))
             r.center = self.tile.getCenter()
             r.y = r.y - 30

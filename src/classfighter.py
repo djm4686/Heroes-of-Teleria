@@ -3,7 +3,7 @@ import pygame, spriteextractor
 from modifyercontainer import *
 class ClassFighter(HeroClass):
     def __init__(self):
-        HeroClass.__init__(self, "Fighter")
+        HeroClass.__init__(self, "Knight")
         self.skills = []
         self.mods = ModifyerContainer(2, 1.0, 3, .75, .5)
         self.hpMod = 10
@@ -54,4 +54,4 @@ class ClassFighter(HeroClass):
     def getSprites(self):
         return self.sprites
     def getSprite(self):
-        return self.sprites[7]
+        return self.sprites2[0]

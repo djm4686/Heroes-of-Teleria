@@ -1,4 +1,4 @@
-import pygame, hero, human, party, button, imagebutton, random, battlescene
+import pygame, hero, human, party, button, imagebutton, random, battlescene, time
 from globalvars import *
 from pygame.locals import *
 class HeroCreationScreen():
@@ -12,6 +12,8 @@ class HeroCreationScreen():
         self.initVariables()
         self.mainLoop()
     def initVariables(self):
+        self.spriteIndex = 0
+        self.lastTime = 0
         self.party = party.Party(1)
         self.party.addHero(self.makeHero())
         self.bgimage = pygame.transform.scale2x(pygame.image.load("images/panel_blue.png"))
@@ -72,6 +74,7 @@ class HeroCreationScreen():
         self.wisLabels = []
         self.levelUpButtons = []
         self.manaLabels = []
+        self.sprites = []
         for hero in self.party.getHeroes():
             self.bgImages.append(imagebutton.ImageButton(self.bgimage, None))
             b = button.Button(self.makeText(hero.getName()),hero.makeConfigScreen, [self.surface])
@@ -87,9 +90,13 @@ class HeroCreationScreen():
             self.conLabels.append(self.makeText("Con: " + str(hero.getCon())))
             self.intLabels.append(self.makeText("Int: " + str(hero.getInt())))
             self.wisLabels.append(self.makeText("Wis: " + str(hero.getWis())))
+            self.sprites.append(hero.getActiveHeroClass().getD3Sprites())
             self.levelUpButtons.append(button.Button(self.makeText("Level Up"), callBack = hero.levelUp))
     def drawUI(self, surface):
         row = 0
+        self.curTime = time.clock()
+
+
         for x in range(len(self.nameButtons)):
             if x != 0  and 800 / (x - (row * 4)) <= 200:
                 row = row + 1
@@ -112,6 +119,13 @@ class HeroCreationScreen():
             surface.blit(self.intLabels[x], pygame.Rect((x - (row * 4)) * 200 + 10, row * 200 + 145, 150, 20))
             surface.blit(self.wisLabels[x], pygame.Rect((x - (row * 4)) * 200 + 10, row * 200 + 160, 150, 20))
             self.levelUpButtons[x].draw(surface)
+            surface.blit(self.sprites[x][self.spriteIndex], pygame.Rect((x - (row * 4)) * 200 + 120, row * 200 + 30, 60, 60))
+            if self.curTime - self.lastTime > .125:
+                if self.spriteIndex >= 5:
+                    self.spriteIndex = 0
+                else:
+                    self.spriteIndex += 1
+                self.lastTime = time.clock()
         self.addHeroButton.draw(surface)
         self.toBattleButton.draw(surface)
     def draw(self, surface):

@@ -1,26 +1,44 @@
 from heroclass import *
-from modifyercontainer import *
 import pygame, spriteextractor
+from modifyercontainer import *
 class ClassMage(HeroClass):
     def __init__(self):
         HeroClass.__init__(self, "Mage")
         self.skills = []
-        self.mods = ModifyerContainer(.5, .5, .75, 4, 2)
-        self.hpMod = 6
-        self.manaMod = 10
+        self.mods = ModifyerContainer(2, 1.0, 3, .75, .5)
+        self.hpMod = 10
+        self.manaMod = 4
         s = spriteextractor.SpriteExtractor()
-        self.sprites = s.extractSprites((32,36), "sprites/mage_m.png")
-        self.sprite = pygame.image.load("images/mage.png")
+        self.sprites = s.extractSprites((32,36), "sprites/warrior_m.png")
+        self.sprites2 = s.extractSprites((60,60), "images/Mage_walk_front_left_SS.png")
+        self.sprites3 = []
+        self.sprites4 = s.extractSprites((60,60), "images/Mage_walk_back_left_SS.png")
+        self.sprites5 = []
+        for x in range(len(self.sprites2)):
+            self.sprites3.append(pygame.transform.flip(self.sprites2[x], 1, 0))
+            self.sprites5.append(pygame.transform.flip(self.sprites4[x], 1, 0))
+        self.image = pygame.transform.scale(pygame.image.load("images/Class_creation_warrior.png"), (300,600))
+        self.sprite = pygame.image.load("images/fighter.png")
+    def getWalkingSprites(self, direction):
+        if direction == 1:
+            return self.sprites5[0::]
+        elif direction == 2:
+            return self.sprites3[0::]
+        elif direction == 3:
+            return self.sprites2[0::]
+        elif direction == 4:
+            return self.sprites4[0::]
+        return self.sprites2[0::]
     def getD1Sprites(self):
-        return self.sprites[9::]
+        return self.sprites5[0::]
     def getD2Sprites(self):
-        return self.sprites[0:3]
+        return self.sprites3[0::]
     def getD3Sprites(self):
-        return self.sprites[3:6]
+        return self.sprites2[0::]
     def getD4Sprites(self):
-        return self.sprites[3:6]
+        return self.sprites4[0::]
     def getD5Sprites(self):
-        return self.sprites[6:9]
+        return self.sprites2[0::]
     def getD6Sprites(self):
         return self.sprites[9::]
     def getManaMod(self):
@@ -36,4 +54,4 @@ class ClassMage(HeroClass):
     def getSprites(self):
         return self.sprites
     def getSprite(self):
-        return self.sprites[7]
+        return self.sprites2[0]

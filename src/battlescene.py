@@ -89,11 +89,6 @@ class BattleScene:
                 self.events[x] = event
         self.events.append(event)
         return True
-    def removeEvent(self, eventid):
-        for x in range(len(self.events)):
-            if self.events[x].getID() == eventid:
-                temp.pop(x)
-        self.events = temp
     def mainLoop(self):
         while self.ismain == True:
             self.eventLoop()
@@ -130,7 +125,7 @@ class BattleScene:
                 self.originp = event.pos
             if event.type == MOUSEBUTTONDOWN and event.button == 2:
                 activeTile = self.hexBoard.collidepoint(event.pos)
-                if activeTile != None:
+                if activeTile is not None:
                     t = self.hexBoard.getNeighborTiles(activeTile, 3)
                     self.addEvent(zoneevent.ZoneEvent(5, t))
             if event.type == MOUSEBUTTONUP and event.button == 3:
@@ -145,7 +140,7 @@ class BattleScene:
                     if event.type == MOUSEBUTTONDOWN and event.button == 1:
                         self.hexBoard.setDirection(self.order[self.phaseCount], event.pos)
                         self.phase.addSubPhase(phase.Phase("Placement"))
-                        self.phaseCount = self.phaseCount + 1
+                        self.phaseCount += 1
                         if self.phaseCount >= len(self.order):
                                 self.resetPhase()
                                 self.phase = phase.Phase("Main")

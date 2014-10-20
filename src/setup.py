@@ -15,8 +15,10 @@ try:
     import py2exe, pygame
     from modulefinder import Module
     import glob, fnmatch
-    import sys, os, shutil
+    import sys, os, shutil, ast
     import operator
+    from os import listdir
+    from os.path import isfile, join
 except ImportError, message:
     raise SystemExit,  "Unable to load module. %s" % message
  
@@ -69,10 +71,20 @@ class BuildExe:
  
         #Extra files/dirs copied to game
         self.extra_datas = []
- 
+        
         #Extra/excludes python modules
-        self.extra_modules = []
-        self.exclude_modules = []
+        self.extra_modules = ["ast", "socket", "random", "urllib2", "mysql.connector"]
+        mypath = "C:\\Users\\Admin\\Desktop\\fantasy_game\\Heroes-of-Teleria\\Heroes-of-Teleria\\src"
+        onlyfiles = [ f for f in listdir(mypath) if isfile(join(mypath,f)) ]
+        lines = 0
+        for f in onlyfiles:
+            x = f.split(".")
+            print x
+            if x[1] != "py":
+                pass
+            else:
+                self.extra_modules.append(x[0])
+        self.exclude_modules = ["AppKit", "Foundation", "_scproxy", "_sysconfigdata", "dummy.Process", "http.client", "netbios", "", "OpenGL.GL", "Numeric", "copyreg", "itertools.imap", "numpy", "pkg_resources", "queue", "winreg", "pygame.SRCALPHA", "pygame.sdlmain_osx"]
         
         #DLL Excludes
         self.exclude_dll = ['']

@@ -7,6 +7,10 @@ class IsoBoard:
         self.size = size
         self.generateBoard()
         self.setNeighbors()
+    def add_zone(self):
+        pass
+    def clear_zones(self):
+        pass
     def getZone2(self):
         returns = []
         for x in self.tiles:

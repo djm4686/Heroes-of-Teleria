@@ -1,4 +1,4 @@
-import classhealer, classmage, classfighter
+import classhealer, classfighter, classmage, classarcher
 import sword, broadsword, pike, greatsword
 import human, elf, dwarf, halfling
 import shortbow, longbow, throwingknife
@@ -8,7 +8,7 @@ import roundshield, buckler, heavyshield
 
 CLASSES = [ classfighter.ClassFighter(),
             classmage.ClassMage(),
-            classhealer.ClassHealer()]
+            classarcher.ClassArcher()]
 RACES = [ human.Human(),
           dwarf.Dwarf(),
           halfling.Halfling(),

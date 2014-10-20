@@ -6,9 +6,11 @@ lines = 0
 for f in onlyfiles:
     x = f.split(".")
     print x
-    if x[1] == "pyc" or x[1] == "txt":
+    if x[1] != "py":
         pass
     else:
         for line in open(f):
             lines += 1
+            if "font" in line:
+                print line
 print lines
