@@ -190,7 +190,9 @@ class Hero:
         return self.currentHp
     def getCurrentMana(self):
         return self.currentMana
-    def draw(self, surface):
+    def resetHP(self):
+        self.currentHp = self.maxhp
+    def draw(self, surface, moving=False):
         if not self.isDead():
             currtime = time.clock()
             if self.direction == 1:
@@ -226,29 +228,31 @@ class Hero:
             hpLabel = self.font.render("HP: " + str(self.getCurrentHP()), True, (0,0,0), (255,0,0))
             r = pygame.Rect(self.tile.getCenter(), (hpLabel.get_rect().width, hpLabel.get_rect().height))
             r.center = self.tile.getCenter()
-            r.y = r.y - 20
-            #surface.blit(hpLabel, r)
+            r.y = r.y - 50
+            if not moving:
+                surface.blit(hpLabel, r)
         else:
             i = pygame.image.load("images/tombstone.png")
             r = pygame.Rect(self.tile.getCenter(), (i.get_rect().width, i.get_rect().height))
             r.center = self.tile.getCenter()
             surface.blit(i, r)
+
 def createFromJSON(data):
-        h = Hero(int(data["heroID"]), data["name"], CLASSES[int(data["activeClass"])], RACES[int(data["race"])])
-        h.level = int(data["level"])
-        h.exp = int(data["exp"])
-        h.strength = int(data["str"])
-        h.agility = int(data["agi"])
-        h.constitution = int(data["con"])
-        h.intelligence = int(data["inte"])
-        h.wisdom = int(data["wis"])
-        h.maxhp = int(data["hp"])
-        h.playerID = int(data["playerID"])
-        h.meleeWeapon = MELEE_WEAPONS[int(data["meleeEquipment"])]
-        h.rangedWeapon = RANGED_WEAPONS[int(data["rangedEquipment"])]
-        h.armor = ARMOR[int(data["armorEquipment"])]
-        h.shield = SHIELDS[int(data["shieldEquipment"])]
-        h.maxMana = int(data["mana"])
-        h.currentHp = int(data["currenthp"])
-        h.currentMana = int(data["currentmana"])
-        return h
+    h = Hero(int(data["heroID"]), data["name"], CLASSES[int(data["activeClass"])], RACES[int(data["race"])])
+    h.level = int(data["level"])
+    h.exp = int(data["exp"])
+    h.strength = int(data["str"])
+    h.agility = int(data["agi"])
+    h.constitution = int(data["con"])
+    h.intelligence = int(data["inte"])
+    h.wisdom = int(data["wis"])
+    h.maxhp = int(data["hp"])
+    h.playerID = int(data["playerID"])
+    h.meleeWeapon = MELEE_WEAPONS[int(data["meleeEquipment"])]
+    h.rangedWeapon = RANGED_WEAPONS[int(data["rangedEquipment"])]
+    h.armor = ARMOR[int(data["armorEquipment"])]
+    h.shield = SHIELDS[int(data["shieldEquipment"])]
+    h.maxMana = int(data["mana"])
+    h.currentHp = int(data["currenthp"])
+    h.currentMana = int(data["currentmana"])
+    return h

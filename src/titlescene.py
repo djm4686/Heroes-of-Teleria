@@ -31,8 +31,8 @@ class TitleScene:
         temprect.center = self.nameRect.center
         temprect.y -= 100
         self.error = False
-        self.usernameButton.setRect(pygame.Rect((temprect.x, temprect.y), (150, 20)))
-        self.passwordButton.setRect(pygame.Rect((temprect.x, temprect.y + 30), (150, 20)))
+        self.usernameButton.setRect(pygame.Rect((temprect.x, temprect.y + 200), (150, 20)))
+        self.passwordButton.setRect(pygame.Rect((temprect.x, temprect.y + 230), (150, 20)))
         self.cancelButton = button.Button(self.makeText("Cancel", 20), self.mainPhase)
         self.registerButton = button.Button(self.makeText("Register", 20), self.register)
         self.loginButton = button.Button(self.makeText("Login", 20), self.login)

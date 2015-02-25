@@ -14,7 +14,7 @@ class Path:
     def getNextNode(self):
         self.node += 1
         if self.node < len(self.path):
-            return self.path[self.node], self.directions[self.node]
+            return self.path[self.node]
         else:
             return None
         
@@ -46,15 +46,42 @@ class MoveAnimation(heroanimation.HeroAnimation):
         if x < cx and y > cy:
             hero.setDirection(3)
     def createPath(self):
-        currTile = self.hero.getTile()
-        while (currTile.getID() != self.endTile.getID() and (currTile.getGameObject() != None and currTile.getGameObject().getID() == self.hero.getID())) or (currTile.getID() != self.endTile.getID() and currTile.getGameObject() == None) :
-            self.setDirection(currTile, self.endTile.getCenter(), self.hero)
-            currTile = self.hero.getTile().getNeighbors()[self.hero.getDirection()-1]
-            self.hero.setTile(currTile)
-            self.path.addTile(currTile, self.hero.getDirection())
-        self.hero.setTile(self.startTile)
-        self.hero.setDirection(self.path.getDirections()[1])
-        print self.path.getDirections()
+        start = self.startTile
+        start.gscore = 0
+        start.last = None
+        dest = self.endTile
+        closedSet = []
+        openSet = [start]
+        self.heuristic = lambda current: math.sqrt(abs(current.getCenter()[1] - dest.getCenter()[1])**2 + abs(current.getCenter()[0] - dest.getCenter()[0])**2)/60
+        while len(openSet) > 0:
+            current = sorted(openSet, key=lambda x: self.heuristic(x))[0]
+            if dest.getID() == current.getID() or current.getID() == dest.getID():
+                self.path.path = self.reconstructPath(current)
+            closedSet.append(openSet.pop(0))
+            for neighbor in current.getNeighbors():
+                if neighbor == None or self.checkTileID(closedSet, neighbor.getID()) or neighbor.getGameObject() != None:
+                    continue
+                tentgscore = current.gscore + 1
+                if not self.checkTileID(openSet, neighbor.getID()):
+                    neighbor.gscore = tentgscore
+                    neighbor.last = current
+                    neighbor.fscore = neighbor.gscore + self.heuristic(neighbor)
+                    if not self.checkTileID(closedSet, neighbor.getID()):
+                        openSet.append(neighbor)
+        return False
+    def checkTileID(self, tiles, id):
+        for x in tiles:
+            if x and x.getID() == id:
+                return True
+        else:
+            return False
+    def reconstructPath(self, current):
+        total_path = [current]
+        while current.last:
+            total_path.append(current.last)
+            current = current.last
+        return total_path[::-1]
+
     def animate(self, surface):
         self.curTime = time.clock()
         if self.curTime - self.lastTime > .125 and self.working == True:
@@ -64,17 +91,18 @@ class MoveAnimation(heroanimation.HeroAnimation):
                 if self.node == None:
                     self.node = self.path.getNextNode()
                     self.nextNode = self.path.getNextNode()
-                    self.setDirection(self.node[0], self.nextNode[0].getCenter(), self.hero)
+                    self.setDirection(self.node, self.nextNode.getCenter(), self.hero)
                     self.hero.setTile(None)
                 elif self.nextNode != None:
                     self.node = self.nextNode
                     self.nextNode = self.path.getNextNode()
                     if self.nextNode != None:
-                        self.setDirection(self.node[0], self.nextNode[0].getCenter(), self.hero)
+                        self.setDirection(self.node, self.nextNode.getCenter(), self.hero)
                     self.hero.setTile(None)
                 if self.nextNode == None:
                     self.working = False
-                    self.hero.setTile(self.node[0])
+                    self.hero.setTile(self.node)
+                    print "Returning node!"
                     return self.node
                 self.lastTime = 0
             self.lastTime = self.curTime
@@ -83,22 +111,22 @@ class MoveAnimation(heroanimation.HeroAnimation):
                 self.i = 0
         
         if self.nextNode != None and self.hero.getTile() == None:
-            if self.x > self.nextNode[0].getCenter()[0] and self.y > self.nextNode[0].getCenter()[1]:
-                self.x -= 1
-                self.y = (.5 * self.x) + (self.nextNode[0].getCenter()[1] - (.5 * self.nextNode[0].getCenter()[0]))
-            elif self.x < self.nextNode[0].getCenter()[0] and self.y > self.nextNode[0].getCenter()[1]:
-                self.x += 1
-                self.y = (-.5 * self.x) + (self.nextNode[0].getCenter()[1] - (-.5 * self.nextNode[0].getCenter()[0]))
-            elif self.x < self.nextNode[0].getCenter()[0] and self.y < self.nextNode[0].getCenter()[1]:
-                self.x += 1
-                self.y = (.5 * self.x) + (self.nextNode[0].getCenter()[1] - (.5 * self.nextNode[0].getCenter()[0]))
-            elif self.x > self.nextNode[0].getCenter()[0] and self.y < self.nextNode[0].getCenter()[1]:
-                self.x -= 1
-                self.y = (-.5 * self.x) + (self.nextNode[0].getCenter()[1] - (-.5 * self.nextNode[0].getCenter()[0]))
-            if self.nextNode != None and math.fabs(self.x - self.nextNode[0].getCenter()[0]) < 1 and math.fabs(self.y - self.nextNode[0].getCenter()[1]) < 1:
-                self.hero.setTile(self.nextNode[0])
+            if self.x > self.nextNode.getCenter()[0] and self.y > self.nextNode.getCenter()[1]:
+                self.x -= 2
+                self.y = (.5 * self.x) + (self.nextNode.getCenter()[1] - (.5 * self.nextNode.getCenter()[0]))
+            elif self.x < self.nextNode.getCenter()[0] and self.y > self.nextNode.getCenter()[1]:
+                self.x += 2
+                self.y = (-.5 * self.x) + (self.nextNode.getCenter()[1] - (-.5 * self.nextNode.getCenter()[0]))
+            elif self.x < self.nextNode.getCenter()[0] and self.y < self.nextNode.getCenter()[1]:
+                self.x += 2
+                self.y = (.5 * self.x) + (self.nextNode.getCenter()[1] - (.5 * self.nextNode.getCenter()[0]))
+            elif self.x > self.nextNode.getCenter()[0] and self.y < self.nextNode.getCenter()[1]:
+                self.x -= 2
+                self.y = (-.5 * self.x) + (self.nextNode.getCenter()[1] - (-.5 * self.nextNode.getCenter()[0]))
+            if self.nextNode != None and math.fabs(self.x - self.nextNode.getCenter()[0]) < 1 and math.fabs(self.y - self.nextNode.getCenter()[1]) < 1:
+                self.hero.setTile(self.nextNode)
             if self.nextNode == None:
-                self.hero.setTile(self.node[0])
+                self.hero.setTile(self.node)
             if self.hero.getTile != None:
                 sprites = self.hero.getWalkingSprites()
                 p = pygame.Rect(self.x, self.y, 60, 60)

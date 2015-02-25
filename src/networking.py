@@ -29,12 +29,20 @@ class DataFrame:
         return "{\"header\" : " + self.header.toString() + ", \"data\" : " + string + "}"
 class MyTCPHandler(SocketServer.BaseRequestHandler):
     def __init__(self, request, client_address, server):
+        self.DataFrameFactory = lambda header, data: DataFrame(Header(0, header), data).toString()
         SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
         return
+    def sendSQLPost(self, payload):
+        cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
+        c = cnx.cursor()
+        c.execute(payload)
+        cnx.commit()
+        c.close()
+        cnx.close()
     def handle(self):
         print "got request"
         # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
+        self.data = self.request.recv(4096).strip()
         try:
             d = ast.literal_eval(self.data)
             conHeader = Header(d["header"]["clientID"], d["header"]["reqtype"])
@@ -87,9 +95,16 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                 else:
                     self.request.sendall(DataFrame(Header(0, "failed")).toString())
             if conHeader.reqtype == "connectToGame":
-                gameID, playerID, jsons = self.connectToGame(d["data"])
+                data = self.connectToGame(d["data"])
+                if data != None:
+                    self.request.sendall(DataFrame(Header(0, "success"), {}).toString())
+                else:
+                    self.request.sendall(DataFrame(Header(0, "failed")).toString())
+            if conHeader.reqtype == "testConnectToGame":
+                gameID, playerID, jsons = self.testConnectToGame(d["data"])
+                print "connect to game response: {}, {}, {}".format(gameID, playerID, jsons)
                 if len(jsons) > 0:
-                    self.request.sendall(DataFrame(Header(0, "success"), {"gameID": str(gameID), "playerID" : playerID, "heroes" : jsons}).toString())
+                    self.request.sendall(DataFrame(Header(0, "success"), {"gameID" : str(gameID), "playerID" : playerID, "heroes" : jsons}).toString())
                 else:
                     self.request.sendall(DataFrame(Header(0, "failed")).toString())
             if conHeader.reqtype == "sendTileChoice":
@@ -97,25 +112,116 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                     self.request.sendall(DataFrame(Header(0, "success")).toString())
                 else:
                     self.request.sendall(DataFrame(Header(0, "failed")).toString())
+            if conHeader.reqtype == "askForBoard":
+                data = self.askForBoard(d["data"])
+                if len(data) > 0:
+                    self.request.sendall(DataFrame(Header(0, "success"), data).toString())
+                else:
+                    self.request.sendall(DataFrame(Header(0, "failed")).toString())
+            if conHeader.reqtype == "nextTurn":
+                data = self.nextTurn(d["data"])
+                if len(data) > 0:
+                    self.request.sendall(self.DataFrameFactory("success", data))
+                else:
+                    self.request.sendall(self.DataFrameFactory("failed", {}))
             if conHeader.reqtype == "getHeroesInGame":
-                pass
+                data = self.getHeroesInGame(d["data"])
+                if len(data) > 0:
+                    self.request.sendall(DataFrame(Header(0, "success"), data).toString())
+                else:
+                    self.request.sendall(DataFrame(Header(0, "failed")).toString())
+            if conHeader.reqtype == "sendParty":
+                data = self.sendParty(d["data"])
+                if data == 1:
+                    self.request.sendall(self.DataFrameFactory("success", {}))
+                else:
+                    self.request.sendall(self.DataFrameFactory("failed", {}))
+            if conHeader.reqtype == "getCurrentHeroTurn":
+                data = self.getCurrentHeroTurn(d["data"])
+                if data != None:
+                    self.request.sendall(self.DataFrameFactory("success", {"heroID" : data}))
+                else:
+                    self.request.sendall(self.DataFrameFactory("failed", {}))
+            if conHeader.reqtype == "getHeroesInOrder":
+                data = self.getHeroesInOrder(d["data"])
+                if data != None:
+                    self.request.sendall(self.DataFrameFactory("success", {"heroes" : data}))
+                else:
+                    self.request.sendall(self.DataFrameFactory("failed", {}))
         except ValueError:
             pass
+    def getCurrentHeroTurn(self, data):
+        gameID = data["gameID"]
+        payload = "select currenthero from currentgames where id = {};".format(gameID)
+        cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
+        c = cnx.cursor()
+        c.execute(payload)
+        for heroID in c:
+            print "HERO ID: {}".format(heroID)
+            return heroID[0]
+    def sendParty(self, data):
+        gameID = data["gameID"]
+        playerID = data["playerID"]
+        heroes = data["heroes"]
+        for x in heroes:
+            payload = "insert into heroesingames (GameID, heroID) values ({}, {});".format(int(gameID), int(x))
+            self.sendSQLPost(payload)
+        return 1
+    def nextTurn(self, data):
+        g = data["gameID"]
+        payload = "select currenthero, nexthero from currentgames where id={};".format(int(g))
+        cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
+        c = cnx.cursor()
+        c.execute(payload)
+        n = None
+        for currenthero, nexthero in c:
+            n = nexthero
+        heroes = self.determineHeroOrder(g)
+        nex = None
+        for x in range(len(heroes)):
+            if heroes[x].getID() == int(n):
+                nex = heroes[x + 1].getID()
+        payload = "update currentgames set currenthero = {}, nexthero = {} where gameID = {};".format(n, nex, int(g))
+        self.sendSQLPost(payload)
+        return {"gameID" : g, "hero" : n}
+    def askForBoard(self, data):
+        g = data["gameID"]
+        payload = "select hexColumn, hexRow, heroID from currentgametiles where GameID = {};".format(str(g))
+        cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
+        c = cnx.cursor()
+        c.execute(payload)
+        tiles = []
+        for hexColumn, hexRow, heroID in c:
+            tiles.append((hexColumn, hexRow, heroID))
+        return {"tiles" : str(tiles)}
+    def getHeroesInOrder(self, data):
+        gameID = data["gameID"]
+        heroes = self.determineHeroOrder(gameID)
+        ret = []
+        for x in heroes:
+            ret.append(x.getJSON())
+        return ret
     def getHeroesInGame(self, data):
         gameID = data["gameID"]
+        print "Got hero request for gameID: {}".format(gameID)
         payload = "select heroID from heroesingames where GameID = "+str(gameID)+";"
         cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
         c = cnx.cursor()
         c.execute(payload)
         heroes = []
         for heroID in c:
-            payload = "select * from heroes where heroID = "+heroID[0]+";"
+            print "SQL Request for heroID: {}".format(heroID[0])
+            payload = "select * from heroes where heroID = {};".format(heroID[0])
             cnx2 = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
-            c2 = cnx.cursor()
+            c2 = cnx2.cursor()
             c2.execute(payload)
             h = self.makeHeroes(c2)
             for he in h:
-                heroes.append(h.getJSON())
+                heroes.append(he.getJSON())
+            c2.close()
+            cnx2.close()
+        print "Heroes: {}".format(heroes)
+        return {"heroes" : heroes}
     def sendTileChoice(self, data):
         playerID = data["id"]
         row = data["row"]
@@ -123,25 +229,44 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         heroID = str(data["hero"])
         gameID = data["gameID"]
         payload = "update currentgametiles set heroID="+heroID+" where hexColumn="+str(col)+" and hexRow=" +str(col)+" and GameID=" +str(gameID)+ ";"
+        self.sendSQLPost(payload)
+        return 1
+    def determineHeroOrder(self, gameID):
+        heroes = self.getHeroesInGame({"gameID" : gameID})["heroes"]
+        actualHeroes = []
+        for x in heroes:
+            h = hero.createFromJSON(ast.literal_eval(x))
+            actualHeroes.append(h)
+        return sorted(actualHeroes, key=lambda her: her.getInitiative())
+    def connectToGame(self, data):
+        playerID = data["playerID"]
+        gameID = data["gameID"]
+        print "Player ID Connect To Game: {}".format(playerID)
+        heroes = self.determineHeroOrder(gameID)
         cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
         c = cnx.cursor()
+        payload = "update currentgames set currenthero={},nexthero={} where id={};".format(heroes[0].getID(), heroes[1].getID(), gameID)
         c.execute(payload)
         cnx.commit()
         return 1
-    def connectToGame(self, data):
+    def testConnectToGame(self, data):
         playerID = data["playerID"]
-        
-        payload = "select id, player2 from currentgames where player1 = "+playerID+";"
+        print "Player ID Connect To Game: {}".format(playerID)
+        payload = "select id, player2 from currentgames where player1 = {};".format(int(playerID))
         cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
         c = cnx.cursor()
         c.execute(payload)
         playerid = 0
+        g = None
         for gameID, ide in c:
             playerid = ide
-            gameID = gameID
-        print "CONNECT TO GAME TEST :::" + str(gameID) + " :: " + str(playerid)
+            g = gameID
         ide, jsons = self.getHeroes({"playerID" : playerid})
-        return gameID, playerid, jsons 
+        heroes = self.determineHeroOrder(g)
+        payload = "update currentgames set currenthero={},nexthero={} where id={};".format(heroes[0].getID(), heroes[1].getID(), g)
+        c.execute(payload)
+        cnx.commit()
+        return g, playerid, jsons
     def getHeroes(self, data):
         playerID = data["playerID"]
         payload = "select * from heroes where playerID = " + str(playerID) + ";"
@@ -200,8 +325,8 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         playerid = data["playerID"]
         hero = data["hero"]
         hero = ast.literal_eval(hero)
-        payloadHeader = "insert into heroes (playerID, "
-        payloadData = ") values (" + str(playerid) + ", "
+        payloadHeader = "insert into heroes ("
+        payloadData = ") values ("
         for key in hero:
             if key == "name":
                 payloadHeader += str(key) + ", "
@@ -214,7 +339,6 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         payloadHeader = payloadHeader[0:len(payloadHeader)-2]
         payloadData = payloadData[0:len(payloadData)-2]
         payload = payloadHeader + payloadData + ");"
-        print payload
         cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
         c = cnx.cursor()
         c.execute(payload)
@@ -223,12 +347,10 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         c.execute(payload)
         currhero = 0
         for heroID in c:
-            print heroID[0]
             if int(heroID[0]) > currhero:
                 currhero = heroID[0]
         return currhero
     def checkChallenge(self, data):
-        print data
         playerid = data["id"]
         cnx = mysql.connector.connect(user = "myuser", password = "mypass", host = "localhost", port = "8080", database="teleria")
         c = cnx.cursor()

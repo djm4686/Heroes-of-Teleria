@@ -3,6 +3,7 @@ class HeroBattleStats:
     def __init__(self, hero):
         self.hero = hero
         self.bgImage = pygame.transform.scale2x(pygame.image.load("images/panel_blue.png"))
+        self.i = 0
     def makeText(self, text):
         self.font = pygame.font.Font(pygame.font.get_default_font(), 12)
         return self.font.render(text, True, (0,0,0))
@@ -15,8 +16,9 @@ class HeroBattleStats:
         self.rangedWeaponLabel = self.makeText("Ranged: " + self.hero.getRangedWeapon().getName())
         self.armorLabel = self.makeText("Armor: " + self.hero.getArmor().getName())
         self.shieldLabel = self.makeText("Shield: " + self.hero.getShield().getName())
-        
-    def draw(self, surface):
+        self.sprites = self.hero.getActiveHeroClass().getD3Sprites()
+
+    def draw(self, surface, i = 0):
         self.makeLabels()
         surface.blit(self.bgImage, pygame.Rect(0,400,200,200))
         surface.blit(self.nameLabel, pygame.Rect(10, 410, 100, 20))
@@ -27,4 +29,5 @@ class HeroBattleStats:
         surface.blit(self.armorLabel, pygame.Rect(10, 485, 100, 20))
         surface.blit(self.shieldLabel, pygame.Rect(10, 500, 100, 20))
         surface.blit(self.levelLabel, pygame.Rect(110, 410, 100, 20))
+        surface.blit(self.sprites[i], pygame.Rect(110, 450, 60, 60))
         

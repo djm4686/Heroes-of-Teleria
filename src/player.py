@@ -1,6 +1,6 @@
 import party
 class Player:
-    def __init__(self, ide, name, party = party.AI):
+    def __init__(self, ide, name, party = party.getAi()):
         self.name = name
         self.id = ide
         self.party = party

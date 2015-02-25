@@ -1,13 +1,15 @@
 import pygame, random
 BLACK = (0,0,0)
 class IsometricTile:
-    def __init__(self, ide, x, y, size = 50, height = 2, zone = 1):
+    def __init__(self, ide, x, y, size = 50, height = 1, xindex=0, yindex=0, zone = 1):
         self.x = x
         self.y = y
         self.id = ide
-        self.height = 1
+        self.height = height
         self.size = size
         self.width = size
+        self.xindex = xindex
+        self.yindex = yindex
         self.gameObject = None
         self.n1 = None
         self.n2 = None

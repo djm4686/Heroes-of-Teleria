@@ -9,6 +9,11 @@ class IsoBoard:
         self.setNeighbors()
     def add_zone(self):
         pass
+    def getTileByID(self, id):
+        for x in range(len(self.tiles)):
+            for y in range(len(self.tiles[x])):
+                if self.tiles[x][y].getID() == id:
+                    return (x, y)
     def clear_zones(self):
         pass
     def getZone2(self):
@@ -85,10 +90,13 @@ class IsoBoard:
         for row in range(self.rows):
             self.tiles.append([])
             for column in range(self.cols):
+                h = (self.cols - column - row)
+                if h < 1:
+                    h = 1
                 if row > (self.rows-1) / 2:
-                    self.tiles[row].append(IsometricTile(j, xcoord + (self.size * .5 * column) - (row * self.size * .5), ycoord + (row * self.size * .5 * .5) + (.5 * column * self.size * .5), size = self.size,  zone = 2))
+                    self.tiles[row].append(IsometricTile(j, xcoord + (self.size * .5 * column) - (row * self.size * .5), ycoord + (row * self.size * .5 * .5) + (.5 * column * self.size * .5), size = self.size, height = h, xindex=column, yindex=row, zone = 2))
                 else:
-                    self.tiles[row].append(IsometricTile(j, xcoord + (self.size * .5 * column) - (row * self.size * .5), ycoord + (row * self.size * .5 * .5) + (.5 * column * self.size * .5), size = self.size))
+                    self.tiles[row].append(IsometricTile(j, xcoord + (self.size * .5 * column) - (row * self.size * .5), ycoord + (row * self.size * .5 * .5) + (.5 * column * self.size * .5), size = self.size, xindex=column, yindex=row, height = h))
                 j += 1
     def drawHeroes(self, surface):
         for row in self.tiles:

@@ -1,7 +1,7 @@
 import pygame, networking, player, socket, ast, button, lobby, party, time, networkedbattlescene, hero
 from pygame.locals import *
 class LobbyScene:
-    def __init__(self, surface, player, party = party.AI):
+    def __init__(self, surface, player, party = party.getAi()):
         pygame.init()
         self.party = party
         self.surface = surface
@@ -68,7 +68,7 @@ class LobbyScene:
                 p.addHero(hero.createFromJSON(ast.literal_eval(h)))
             print self.player.getID()
             self.createGame(ide, received["data"]["playerID"], self.player.getID())
-            b = networkedbattlescene.NetworkedBattleScene(ide, self.surface, self.player, self.party, p)
+            b = networkedbattlescene.NetworkedBattleScene(ide, self.surface, self.player, player.Player(received["data"]["playerID"], "Opponent", p), self.party, p)
             self.error = False
         else:
             self.error = True
@@ -95,7 +95,7 @@ class LobbyScene:
             return 0
     def connectToGame(self, ide):
         HOST, PORT = "localhost", 9999
-        data = networking.DataFrame(networking.Header(1, "connectToGame"), {"playerID" : ide}).toString()
+        data = networking.DataFrame(networking.Header(1, "testConnectToGame"), {"playerID" : ide}).toString()
 
         # Create a socket (SOCK_STREAM means a TCP socket)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -107,16 +107,16 @@ class LobbyScene:
 
             # Receive data from the server and shut down
             received = sock.recv(4096)
+            print received
         finally:
             sock.close()
         print received
         received = ast.literal_eval(received)
         if received["header"]["reqtype"] == "success":
-            p = party.Party(player.Player())
+            p = party.Party(player.Player(received["data"]["playerID"], "Opponent", None))
             for h in received["data"]["heroes"]:
-                
                 p.addHero(hero.createFromJSON(ast.literal_eval(h)))
-            b = networkedbattlescene.NetworkedBattleScene(received["data"]["gameID"], self.surface, self.player, self.party, p)
+            b = networkedbattlescene.NetworkedBattleScene(received["data"]["gameID"], self.surface, self.player, player.Player(received["data"]["playerID"], "Opponent", p), self.party, p)
 
             return 1
         else:
