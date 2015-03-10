@@ -1,11 +1,11 @@
 class Spell:
-    def __init__(self, name, damage, effects = []):
+    def __init__(self, name, damage, effects = [], rang = 2, aoe = 1):
         self.type = "spell"
         self.name = name
         self.effects = effects
         self.damage = damage
-        self.aoe = 1
-        self.range = 1
+        self.aoe = aoe
+        self.range = rang
         self.currentExp = 0
         self.reqExp = 100
         self.friendlyFire = False
@@ -34,3 +34,5 @@ class Spell:
         return self.damage
     def getType(self):
         return self.type
+    def targetsGround(self):
+        return False

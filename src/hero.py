@@ -11,6 +11,8 @@ class Hero:
         self.secondaryClasses = []
         self.race = race
         self.playerID = playerID
+        self.attackMod = 0
+        self.armorMod = 0
         self.level = 1
         self.exp = 0
         self.expForNextLevel = 100
@@ -29,12 +31,43 @@ class Hero:
         self.armor = None
         self.tile = None
         self.range = 4
+        self.spellEffects = []
         self.meleeWeapon = sword.Sword()
         self.rangedWeapon = shortbow.ShortBow()
         self.shield = buckler.Buckler()
         self.armor = chainmail.ChainMail()
+        self.spellsMastered = []
         self.lastTime = time.clock()
         self.i = 0
+    def updateModifyers(self):
+        self.attackMod = 0
+        self.armorMod = 0
+        print self.spellEffects
+        for x in self.spellEffects:
+            if x.isAttackMod():
+                self.attackMod += x.getAmt()
+            elif x.isArmorMod():
+                self.armorMod += x.getAmt()
+    def updateSpellEffectsTurn(self):
+        for x in self.spellEffects:
+            if not x.isRoundDuration() and not x.updateSpellEffect(self):
+                x.removeFromHero(self)
+    def updateSpellEffectsRound(self):
+        for x in self.spellEffects:
+            if x.isRoundDuration() and not x.updateSpellEffect(self):
+                x.removeFromHero(self)
+    def getSpellEffects(self):
+        return self.spellEffects
+    def addSpellEffect(self, e):
+        self.spellEffects.append(e)
+    def heal(self, amt):
+        print "healing..."
+        if self.currentHp + amt > self.maxhp:
+            self.currentHp = self.maxhp
+        else:
+            self.currentHp += amt
+    def getMasteredSpells(self):
+        return self.spellsMastered
     def getWalkingSprites(self):
         return self.activeHeroClass.getWalkingSprites(self.direction)
     def getPlayerID(self):
@@ -83,6 +116,8 @@ class Hero:
     def getInitiative(self):
         return self.agility/self.level
     def damageSelf(self, damage):
+        if damage < 0:
+            damage = 0
         self.currentHp = self.currentHp - damage
         if self.currentHp < 0:
             self.currentHp = 0
@@ -131,13 +166,14 @@ class Hero:
     def getMovementRange(self):
         return self.range + 1
     def meleeAttack(self, hero):
-        return hero.damageSelf(int(math.ceil((self.strength +self.getMeleeWeapon().getPower())* hero.calculateAC())))
+        print self.name, self.attackMod
+        return hero.damageSelf(int(math.ceil((self.strength +self.getMeleeWeapon().getPower())* self.calculateAC())) + self.attackMod)
     def rangedAttack(self, hero):
-        return hero.damageSelf(int(math.ceil((self.agility + self.getRangedWeapon().getPower())*hero.calculateAC())))
+        return hero.damageSelf(int(math.ceil((self.agility + self.getRangedWeapon().getPower())*hero.calculateAC())) + self.attackMod)
     def getMaxMana(self):
         return self.maxMana
     def makeConfigScreen(self, params):
-        return heroconfigscreen.HeroConfigScreen(self, params[0])
+        return heroconfigscreen.HeroConfigScreen(self, params)
     def calculateMeleeDamage(self):
         return (self.strength + self.meleeWeapon.getDamage())/self.level
     def calculateRangedDamage(self):

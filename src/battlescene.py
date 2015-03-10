@@ -4,7 +4,7 @@ from pygame.locals import *
 import sys
 import ai
 import textanimation
-
+import endstatslayer
 
 
 class BattleScene:
@@ -32,6 +32,9 @@ class BattleScene:
         self.originp = (0,0)
         self.animations = []
         self.mouseOver = None
+        self.currentSpell = None
+        self.drawToolTip = False
+        self.toolTipPos = None
         self.hexBoard = isoboard.IsoBoard(10,10, 64)
         self.makeChoiceButtons()
         self.cancelButton = button.Button(self.makeText("Cancel"), self.startPhase)
@@ -87,26 +90,55 @@ class BattleScene:
 
     def makeAttackButtons(self):
         self.choiceButtons = []
-        self.choiceButtons.append(button.Button(self.makeText("Melee"), self.meleePhase))
-        self.choiceButtons.append(button.Button(self.makeText("Ranged"), self.rangedPhase))
-        self.choiceButtons.append(button.Button(self.makeText("Skill"), self.skillPhase))
+        self.choiceButtons.append(button.Button(self.makeText("Melee"), self.meleePhase, tooltipName="Melee Attack", tooltipText="Make an attack to an adjacent Hero."))
+        self.choiceButtons.append(button.Button(self.makeText("Ranged"), self.rangedPhase, tooltipName="Ranged Attack", tooltipText="Make an attack to a hero within range of your Ranged Weapon."))
+        #self.choiceButtons.append(button.Button(self.makeText("Skill"), self.skillPhase, tooltipName=""))
 
     def makeChoiceButtons(self):
         self.choiceButtons = []
-        self.choiceButtons.append(button.Button(self.makeText("Move"), self.movePhase))
-        self.choiceButtons.append(button.Button(self.makeText("Attack"), self.attackPhase))
+        self.choiceButtons.append(button.Button(self.makeText("Move"), self.movePhase, tooltipName="Move Command", tooltipText="Move this hero to another tile. This can only be done once per turn."))
+        self.choiceButtons.append(button.Button(self.makeText("Attack"), self.attackPhase, tooltipName="Attack Command", tooltipText="Have this Hero attack another. This can only be done once per turn."))
+        self.choiceButtons.append(button.Button(self.makeText("Spell"), self.spellPhase, tooltipName="Spell Command", tooltipText="Have this hero cast a Spell upon another. This can only be done once per turn."))
+    def makeSpellButtons(self):
+        self.choiceButtons = []
+        self.choiceButtons.append(button.Button(self.makeText(self.getActiveHero().getMeleeWeapon().getSpell().getName()),
+                                                self.getSpellTarget, [self.getActiveHero().getMeleeWeapon().getSpell()],
+                                                tooltipName=self.getActiveHero().getMeleeWeapon().getSpell().getName(),
+                                                tooltipText=self.getActiveHero().getMeleeWeapon().getSpell().getDescription()))
+
+    def getSpellTarget(self, spell):
+        print "is it getting here?"
+        self.phase.addSubPhase(phase.Phase("TargetSpell"))
+        self.currentSpell = spell
+
+    def spellPhase(self):
+        self.phase.addSubPhase(phase.Phase("Spell"))
+        self.makeSpellButtons()
 
     def resetPhase(self):
         self.phaseCount = 0
         self.events = []
-
+    def syncBoard(self):
+        pass
+        # for row in self.hexBoard.tiles:
+        #     for cell in row:
+        #         if cell.getGameObject() != None:
+        #             for x in range(len(self.order)):
+        #                 if cell.getGameObject().getID() == self.order[x].getID():
+        #                     self.order[x] = cell.getGameObject()
     def nextHero(self):
         self.moved = False
         self.attacked = False
+        self.getActiveHero().attacked = False
+        self.getActiveHero().moved = False
+        for x in self.order:
+            x.updateSpellEffectsTurn()
+            x.updateModifyers()
         if self.phaseCount == len(self.order) - 1:
             self.phaseCount = 0
         else:
             self.phaseCount = self.phaseCount + 1
+        self.getActiveHero().updateSpellEffectsRound()
 
     def addEvent(self, event):
         for x in range(len(self.events)):
@@ -121,6 +153,12 @@ class BattleScene:
             self.eventLoop()
             self.draw(self.surface)
             pygame.display.update()
+            if self.checkForWinner():
+                    stats = endstatslayer.Stats([100,100], self.party1, self.party2, "Game Over!")
+                    while stats.is_main:
+                        stats.eventLoop()
+                        stats.draw(self.surface)
+                        pygame.display.update()
         for x in self.party1.getHeroes() + self.party2.getHeroes():
             x.setTile(None)
             x.resetHP()
@@ -176,7 +214,14 @@ class BattleScene:
         for event in pygame.event.get():
             if event.type == QUIT:
                     pygame.quit()
-
+            if event.type == MOUSEMOTION and self.partyManager.checkHero(self.getActiveHero()) == 1:
+                for x in self.choiceButtons:
+                    if x.collidepoint(event.pos):
+                        self.drawToolTip = True
+                        self.toolTipPos = event.pos
+                        break
+                    else:
+                        self.drawToolTip = False
             if event.type == MOUSEMOTION:
                 t = self.hexBoard.collidepoint(event.pos)
                 if t != None and t.getGameObject() != None:
@@ -261,10 +306,23 @@ class BattleScene:
                     for x in self.getEvent(2).getTiles():
                         if event.type == MOUSEBUTTONUP and event.button == 1 and x.collidepoint(event.pos) and x.getGameObject() != None:
                             self.processRangedAttack(self.getActiveHero(), x.getGameObject())
+                elif self.phase.getSubPhase().getName() == "Spell":
+                    for x in self.choiceButtons:
+                        if event.type == MOUSEBUTTONUP and x.collidepoint(event.pos):
+                            x.callBack()
+                elif self.phase.getSubPhase().getName() == "TargetSpell":
+                    self.addEvent(targetevent.TargetEvent(3, self.getActiveHero().getTile(), self.currentSpell.getRange(), (255,0,0)))
+                    for x in self.getEvent(3).getTiles():
+                        if event.type == MOUSEBUTTONUP and event.button == 1 and x.collidepoint(event.pos) and x.getGameObject() != None:
+                            self.currentSpell.target(x.getGameObject())
+                            self.attacked = True
+                            self.startPhase()
+                            self.animations.append(textanimation.TextAnimation("Spell: {} applied!".format(self.currentSpell.name), x.getCenter(), (0,0,0), 150, 24))
                 if self.phase.getSubPhase().getName() != "TurnStart":
                     if event.type == MOUSEBUTTONUP and self.cancelButton.collidepoint(event.pos):
                         self.cancelButton.callBack()
                 if self.checkForWinner():
+                    self.activeHero = self.order[0]
                     self.addEvent(activeHeroEvent.activeHeroEvent(0, self.getActiveHero().getTile()))
             elif self.phase.getName() == "test":
                 if event.type == MOUSEMOTION:
@@ -278,10 +336,11 @@ class BattleScene:
         self.events = []
         self.moved = True
     def processRangedAttack(self, attacker, defender):
-        attacker.rangedAttack(defender)
+        dmg = attacker.rangedAttack(defender)
         self.attacked = True
         self.isDead(defender)
         self.startPhase()
+        self.animations.append(textanimation.TextAnimation(str(dmg) + " Damage!", defender.getTile().getCenter()))
     def processMeleeAttack(self, attacker, defender):
         dmg = attacker.meleeAttack(defender)
         self.attacked = True
@@ -291,6 +350,7 @@ class BattleScene:
     def getActiveHero(self):
         return self.order[self.phaseCount]
     def update(self):
+        self.syncBoard()
         if self.phase.getSubPhase().getName() == "TurnStart" and self.partyManager.checkHero(self.getActiveHero()) != 1:
             self.processAITurn(*self.ai.processTurn(self.hexBoard, self.getActiveHero(), self.moved, self.attacked))
         self.checkForWinner()
@@ -370,7 +430,7 @@ class BattleScene:
                 for x in range(len(self.choiceButtons)):
                     self.choiceButtons[x].setRect(pygame.Rect(200, 400 + (x * 50), 100, 50))
                     self.choiceButtons[x].draw(surface)
-            elif self.phase.getSubPhase().getName() == "Attack":
+            if self.phase.getSubPhase().getName() == "Attack" or self.phase.getSubPhase().getName() == "Spell":
                 for x in range(len(self.choiceButtons)):
                     self.choiceButtons[x].setRect(pygame.Rect(200, 400 + (x * 50), 100, 50))
                     self.choiceButtons[x].draw(surface)
@@ -393,6 +453,10 @@ class BattleScene:
         for x in self.animations:
             if not x.animate(surface):
                 self.animations.remove(x)
+        if self.drawToolTip:
+            for x in self.choiceButtons:
+                if x.collidepoint(self.toolTipPos):
+                    x.drawToolTip(surface, self.toolTipPos)
         
 if __name__ == "__main__":
     pygame.init()

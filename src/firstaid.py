@@ -1,6 +1,10 @@
-import technique
-class FirstAid(technique.Technique):
+import spell
+
+class FirstAid(spell.Spell):
+
     def __init__(self):
-        technique.Technique.__init__(self, "First Aid", None,10, [])
-        self.aoe = 1
-        self.description = "The user practices first aid on himself, healing wounds slightly."
+        spell.Spell.__init__(self, "First Aid", 10)
+        self.range = 1
+        self.description = "This hero uses his First Aid skills to heal himself in battle."
+    def target(self, t):
+        t.heal(self.damage)

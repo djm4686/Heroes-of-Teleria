@@ -1,6 +1,7 @@
 import pygame
+import tooltip
 class Button:
-    def __init__(self, textLabel = None, callBack = None, cbparams = [], rect = pygame.Rect(0,0,100,50), color = (152,172,186), textColor = (0,0,0)):
+    def __init__(self, textLabel = None, callBack = None, cbparams = [], rect = pygame.Rect(0,0,100,50), color = (152,172,186), textColor = (0,0,0), tooltipName = "", tooltipText = ""):
         self.textLabel = textLabel
         self.textRect = self.textLabel.get_rect()
         self.rect = rect
@@ -9,10 +10,13 @@ class Button:
         self.cb = callBack
         self.textRect.center = self.rect.center
         self.cbparams = cbparams
+        self.tooltip = tooltip.ToolTip(tooltipName, tooltipText, (0,0))
     def setText(self, textLabel):
         self.textLabel = textLabel
         self.textRect = self.textLabel.get_rect()
         self.textRect.center = self.rect.center
+    def drawToolTip(self, surface, point):
+        self.tooltip.draw(surface, point)
     def getText(self):
         pass
     def setCenter(self, point):
@@ -31,7 +35,7 @@ class Button:
         return self.cb
     def callBack(self):
         if len(self.cbparams)>0:
-            self.cb(self.cbparams)
+            self.cb(*self.cbparams)
         else:
             self.cb()
     def draw(self, surface):

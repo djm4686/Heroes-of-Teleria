@@ -102,13 +102,13 @@ class HeroConfigScreen:
             if event.type == QUIT:
                 pygame.quit()
     def assignMeleeWeapon(self, w):
-        self.hero.meleeWeapon = w[0]
+        self.hero.meleeWeapon = w
     def assignRangedWeapon(self, r):
-        self.hero.rangedWeapon = r[0]
+        self.hero.rangedWeapon = r
     def assignArmor(self, a):
-        self.hero.armor = a[0]
+        self.hero.armor = a
     def assignShield(self, s):
-        self.hero.shield = s[0]
+        self.hero.shield = s
     def drawEquipmentComponent(self, surface):
         self.meleeButton.draw(surface)
         self.rangedButton.draw(surface)

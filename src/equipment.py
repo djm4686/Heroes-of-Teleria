@@ -1,10 +1,10 @@
 class Equipment:
-    def __init__(self, name):
+    def __init__(self, name, spell = None):
         self.name = name
-        self.ability = None
-    def getAbility(self):
-        return self.ability
-    def setAbility(self, a):
-        self.ability = a
+        self.spell = spell
+    def getSpell(self):
+        return self.spell
+    def setSpell(self, a):
+        self.spell = a
     def getName(self):
         return self.name
