@@ -7,3 +7,6 @@ pygame
 
 
 Once the repository has been downloaded, you can play it by running titlescene.py
+
+To create a runnable .exe distributable, you will need to download the py2exe module, and run: 
+python setup.py py2exe
