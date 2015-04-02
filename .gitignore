@@ -48,4 +48,3 @@ dist/
 "include in dist"/
 particles/
 pyignition/
-*.pyc
